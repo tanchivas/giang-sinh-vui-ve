@@ -1,0 +1,27 @@
+index.html
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>🎄 Quà Giáng Sinh</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #0f172a;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>🎄 Món quà sẽ mở lúc</h1>
+    <h2>12:00 trưa</h2>
+    <p>Hãy quay lại sau nhé ✨</p>
+  </div>
+</body>
+</html>
