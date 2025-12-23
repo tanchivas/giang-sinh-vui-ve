@@ -48,4 +48,219 @@ body { margin:0; overflow:hidden; background:black; font-family:Arial }
   position:absolute;
   font-size:22px;
   opacity:0.8;
-  animation: f
+  animation: floatUp 2.5s linear forwards;
+}
+
+@keyframes floatUp {
+  0% { transform:translateY(0) scale(0.8); opacity:0; }
+  10% { opacity:1; }
+  100% { transform:translateY(-120px) scale(1.4); opacity:0; }
+}
+
+#camera-preview {
+  position:fixed;
+  top:10px;
+  right:10px;
+  width:120px;
+  height:90px;
+  transform:scaleX(-1);
+  opacity:.6;
+  border:2px solid red;
+}
+</style>
+</head>
+
+<body>
+<div id="canvas-container"></div>
+<div id="status">🎄 Giáng Sinh An Lành 🎄</div>
+<div id="loveText">❤️ I love you</div>
+<div id="heartLayer"></div>
+
+<video class="input_video" style="display:none"></video>
+<canvas id="camera-preview"></canvas>
+
+<script>
+/* ===================== 3D SETUP ===================== */
+let scene, camera, renderer;
+let group;
+let state = "TREE";
+let handX = 0;
+
+function init3D() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
+  camera.position.z = 100;
+
+  renderer = new THREE.WebGLRenderer({ antialias:true });
+  renderer.setSize(innerWidth, innerHeight);
+  document.getElementById("canvas-container").appendChild(renderer.domElement);
+
+  const geo = new THREE.BufferGeometry();
+  const count = 1500;
+  const pos = [];
+  const tree = [];
+  const explode = [];
+
+  for(let i=0;i<count;i++){
+    const h=Math.random()*60;
+    const y=h-30;
+    const r=(1-h/60)*30*Math.random();
+    const a=Math.random()*Math.PI*2;
+
+    const tx=r*Math.cos(a);
+    const tz=r*Math.sin(a);
+
+    tree.push(tx,y,tz);
+    pos.push(tx,y,tz);
+
+    const rr=Math.random()*60;
+    explode.push(
+      rr*Math.sin(a),
+      (Math.random()-0.5)*60,
+      rr*Math.cos(a)
+    );
+  }
+
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos,3));
+  geo.userData={tree,explode};
+
+  const mat=new THREE.PointsMaterial({
+    color:0xffd700,
+    size:2,
+    transparent:true
+  });
+
+  group=new THREE.Points(geo,mat);
+  scene.add(group);
+  animate();
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  const p=group.geometry.attributes.position.array;
+  const tgt=group.geometry.userData[state==="TREE"?"tree":"explode"];
+  for(let i=0;i<p.length;i++){
+    p[i]+=(tgt[i]-p[i])*0.05;
+  }
+  group.geometry.attributes.position.needsUpdate=true;
+  group.rotation.y+=(handX-0.5)*0.02;
+  renderer.render(scene,camera);
+}
+
+/* ===================== LOVE TEXT ===================== */
+let heartPulse=0;
+function updateLove(show){
+  const el=document.getElementById("loveText");
+  if(show){
+    heartPulse+=0.08;
+    const s=1+Math.sin(heartPulse)*0.15;
+    el.style.opacity=1;
+    el.style.transform=`translateX(-50%) scale(${s})`;
+  } else {
+    heartPulse=0;
+    el.style.opacity=0;
+    el.style.transform="translateX(-50%) scale(1)";
+  }
+}
+
+/* ===================== HEART RAIN ===================== */
+let heartInterval=null;
+
+function spawnHeart(){
+  const layer=document.getElementById("heartLayer");
+  const h=document.createElement("div");
+  h.className="heart";
+  h.innerText="❤️";
+  h.style.left=Math.random()*100+"%";
+  h.style.bottom="100px";
+  layer.appendChild(h);
+  setTimeout(()=>h.remove(),2500);
+}
+
+function startHeartRain(){
+  if(heartInterval) return;
+  heartInterval=setInterval(spawnHeart,300);
+}
+
+function stopHeartRain(){
+  clearInterval(heartInterval);
+  heartInterval=null;
+  document.getElementById("heartLayer").innerHTML="";
+}
+
+/* ===================== HAND TRACK ===================== */
+function startCamera(){
+  const video=document.querySelector(".input_video");
+  const canvas=document.getElementById("camera-preview");
+  const ctx=canvas.getContext("2d");
+  const status=document.getElementById("status");
+
+  const hands=new Hands({
+    locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`
+  });
+  hands.setOptions({maxNumHands:2});
+
+  hands.onResults(res=>{
+    ctx.clearRect(0,0,120,90);
+    ctx.drawImage(res.image,0,0,120,90);
+
+    let isHeart=false;
+
+    if(res.multiHandLandmarks.length===2){
+      state="TREE";
+      status.innerText="❤️ I love you";
+      status.style.color="#ff4d6d";
+      isHeart=true;
+    }
+
+    if(!isHeart && res.multiHandLandmarks.length===1){
+      const lm=res.multiHandLandmarks[0];
+      handX=lm[9].x;
+      const wrist=lm[0];
+      let open=0;
+      [8,12,16,20].forEach(i=>{
+        open+=Math.hypot(lm[i].x-wrist.x,lm[i].y-wrist.y);
+      });
+      const pinch=Math.hypot(lm[4].x-lm[8].x,lm[4].y-lm[8].y);
+
+      if(open<0.25){
+        state="TREE";
+        status.innerText="✊ Thu cây";
+        status.style.color="#FFD700";
+      }
+      else if(pinch<0.05){
+        state="PHOTO";
+        status.innerText="👌 Zoom ảnh";
+        status.style.color="#00FFFF";
+      }
+      else{
+        state="EXPLODE";
+        status.innerText="🖐 Bung cây";
+        status.style.color="#FFA500";
+      }
+    }
+
+    updateLove(isHeart);
+    if(isHeart) startHeartRain(); else stopHeartRain();
+  });
+
+  const cam=new Camera(video,{
+    onFrame:async()=>await hands.send({image:video}),
+    width:320,
+    height:240
+  });
+  cam.start();
+}
+
+/* ===================== START ===================== */
+init3D();
+startCamera();
+
+window.addEventListener("resize",()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
