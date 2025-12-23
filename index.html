@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <title>🎄 Món quà dành cho bạn</title>
+  <meta charset="UTF-8">
+  <title>🎄 Quà Giáng Sinh</title>
   <style>
     body {
+      margin: 0;
+      height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
       background: #052e16;
       color: #ecfdf5;
       font-family: Arial, sans-serif;
       text-align: center;
+    }
+    .hidden {
+      display: none;
     }
     a {
       color: #86efac;
@@ -22,12 +26,39 @@
   </style>
 </head>
 <body>
-  <div>
-    <h1>🎄 Merry Christmas</h1>
-    <p>Đây là món quà dành cho bạn:</p>
-    <a href="https://tanchivas.github.io/giang-sinh-vui-ve/" target="_blank">
-      👉 Xem cây thông 🎄
-    </a>
-  </div>
+
+<!-- MÀN CHỜ -->
+<div id="waiting">
+  <h1>🎄 Món quà sẽ mở lúc</h1>
+  <h2>12:00 trưa</h2>
+  <p>Hãy quay lại sau nhé ✨</p>
+</div>
+
+<!-- CÂY THÔNG (CODE LÚC TRƯA CỦA BẠN) -->
+<div id="gift" class="hidden">
+  <pre style="font-size:18px; line-height:1.2">
+        🎄
+       🎄🎄🎄
+      🎄🎄🎄🎄🎄
+     🎄🎄🎄🎄🎄🎄🎄
+    🎄🎄🎄🎄🎄🎄🎄🎄🎄
+           ||
+           ||
+  </pre>
+  <p>🎁 Merry Christmas!</p>
+</div>
+
+<script>
+  const openTime = new Date();
+  openTime.setHours(12, 0, 0, 0); // 12:00 trưa HÔM NAY
+
+  const now = new Date();
+
+  if (now >= openTime) {
+    document.getElementById("waiting").classList.add("hidden");
+    document.getElementById("gift").classList.remove("hidden");
+  }
+</script>
+
 </body>
 </html>
